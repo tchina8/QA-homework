@@ -1,0 +1,7 @@
+*.mp4
+__pycache__/
+.pytest_cache/
+venv/
+.venv/
+.env
+node_modules/
