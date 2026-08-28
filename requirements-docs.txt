@@ -1,0 +1,15 @@
+# Сборка PDF-отчёта. Для прогона тестов не нужно — там хватает requirements.txt.
+#
+#   .venv\Scripts\python.exe -m pip install -r requirements-docs.txt
+#   .venv\Scripts\python.exe workflow\build_pdf.py reports\regression-report.html
+#
+# playwright управляет уже установленным в системе Chrome (канал `chrome`),
+# свой браузер не скачивает: `playwright install` выполнять не нужно.
+playwright==1.62.0
+
+# Рендер PDF в картинки и склейка титула с телом документа. Тянет бинарник
+# pdfium с собой, системных зависимостей не требует.
+pypdfium2==5.13.0
+
+# Нужен pypdfium2 для выгрузки страниц в PNG при вычитке вёрстки.
+pillow==12.3.0

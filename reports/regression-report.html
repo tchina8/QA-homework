@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Регресс кредитного калькулятора</title>
+<style>
+/* =========================================================================
+   Регресс кредитного калькулятора — печатная вёрстка A4.
+
+   Цвет: один акцент — приглушённый бордо, цвет гроссбуха, а не корпоративный
+   синий по умолчанию. Нейтральные тона уведены в тёплую сторону, чтобы белое
+   поле не выглядело холодным экраном.
+   Шрифт: Cambria — гарнитура, спроектированная для печати, с полноценной
+   кириллицей. Segoe UI — только для служебных ролей: надзаголовки, шапки
+   таблиц, подписи, колонтитулы.
+   Ритм: все вертикальные отступы кратны 3 мм.
+   ========================================================================= */
+
+:root {
+  --accent:        #6e1f2a;
+  --accent-weak:   #a8636c;
+  --tint:          #f6f2ec;
+  --ink:           #1a1816;
+  --muted:         #6f6a64;
+  --rule:          #d9d2c9;
+  --rule-strong:   #b3a99c;
+
+  --unit: 3mm;
+  --measure: 152mm;
+}
+
+@page { size: A4; margin: 0; }
+
+* { box-sizing: border-box; }
+
+html { font-size: 11pt; }
+
+body {
+  margin: 0;
+  font-family: Cambria, Constantia, Georgia, "Times New Roman", serif;
+  color: var(--ink);
+  line-height: 1.55;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/* Служебная гарнитура: надзаголовки, шапки, подписи, метки. */
+.ui, th, caption, .eyebrow, .toc, .cover-meta, .figure-label, .verdict dt, .footnote {
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ---------------------------------------------------------------- страницы */
+
+/* Поля страницы заданы здесь, а не в настройках печати: CSS `@page` перебивает
+   поля, переданные драйверу, и они молча не применяются. Верхний и нижний
+   отступы разводят содержимое с колонтитулами, которые Chrome рисует у самого
+   края листа; без них заголовок раздела перечёркивает верхнюю строку. */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 16mm 22mm 14mm 24mm;
+  break-after: page;
+  position: relative;
+}
+.page:last-child { break-after: auto; }
+
+.body-text { max-width: var(--measure); }
+
+p {
+  margin: 0 0 var(--unit);
+  text-align: left;          /* без выключки: у кириллицы justify даёт реки */
+  max-width: var(--measure);
+}
+
+/* ---------------------------------------------------------------- титул */
+
+.cover { padding: 0; display: flex; flex-direction: column; min-height: 297mm; }
+
+.cover-band {
+  background: var(--accent);
+  color: #fff;
+  padding: 26mm 24mm 14mm;
+}
+
+.cover-kicker {
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  font-size: 8.5pt;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e8cfd2;
+  margin-bottom: 6mm;
+}
+
+.cover h1 {
+  font-size: 34pt;
+  line-height: 1.08;
+  margin: 0 0 6mm;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.cover-sub {
+  font-size: 12.5pt;
+  line-height: 1.45;
+  color: #f0dde0;
+  max-width: 128mm;
+  margin: 0;
+}
+
+.cover-figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 0.75pt solid var(--rule);
+  margin: 0 24mm;
+}
+
+.figure { padding: 9mm 0 8mm; border-right: 0.75pt solid var(--rule); }
+.figure:last-child { border-right: 0; }
+.figure-value {
+  font-size: 24pt;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.figure-label {
+  font-size: 8pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3mm;
+  padding-right: 4mm;
+  line-height: 1.35;
+}
+
+.cover-note {
+  margin: 0 24mm;
+  padding: 9mm 0 0;
+  max-width: 140mm;
+  font-size: 11pt;
+  color: var(--ink);
+  flex: 1;
+}
+
+.cover-meta { margin: 0 24mm 22mm; font-size: 9.5pt; }
+.cover-meta table { width: 100%; border-collapse: collapse; }
+.cover-meta td { padding: 1.8mm 0; border: 0; border-top: 0.5pt solid var(--rule); }
+.cover-meta tr:first-child td { border-top: 0.75pt solid var(--rule-strong); }
+.cover-meta td:first-child {
+  width: 42mm;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 8pt;
+}
+
+/* ---------------------------------------------------------------- заголовки */
+
+.section-head {
+  display: grid;
+  grid-template-columns: 16mm 1fr;
+  align-items: start;
+  border-top: 2pt solid var(--accent);
+  padding-top: 3.5mm;
+  margin-bottom: 7mm;
+}
+
+.section-number {
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  font-variant-numeric: lining-nums;
+  font-size: 22pt;
+  line-height: 0.9;
+  color: var(--accent);
+}
+
+.section-head h2 {
+  font-size: 19pt;
+  line-height: 1.15;
+  margin: 0;
+  font-weight: 400;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+h3 {
+  font-size: 12pt;
+  font-weight: 700;
+  margin: calc(var(--unit) * 2) 0 var(--unit);
+  color: var(--accent);
+  break-after: avoid;
+  max-width: var(--measure);
+}
+h3:first-of-type { margin-top: 0; }
+
+.eyebrow {
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: calc(var(--unit) * 2) 0 var(--unit);
+}
+
+.lede {
+  font-size: 13pt;
+  line-height: 1.45;
+  color: var(--accent);
+  max-width: 150mm;
+  margin-bottom: calc(var(--unit) * 1.5);
+}
+
+/* ---------------------------------------------------------------- оглавление */
+
+.toc { list-style: none; margin: 0; padding: 0; counter-reset: toc; max-width: 150mm; }
+.toc li {
+  counter-increment: toc;
+  display: grid;
+  grid-template-columns: 12mm 1fr auto;
+  align-items: baseline;
+  gap: 4mm;
+  padding: 4mm 0;
+  border-bottom: 0.5pt solid var(--rule);
+  font-size: 11pt;
+}
+.toc li:first-child { border-top: 0.75pt solid var(--rule-strong); }
+.toc li::before {
+  content: counter(toc);
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  font-variant-numeric: lining-nums;
+  color: var(--accent);
+  font-size: 13pt;
+}
+.toc-note { color: var(--muted); font-size: 9pt; font-variant-numeric: lining-nums tabular-nums; }
+.toc-sub { color: var(--muted); font-size: 9.5pt; display: block; }
+
+/* ---------------------------------------------------------------- таблицы */
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 calc(var(--unit) * 1.7);
+  font-size: 9.5pt;
+  line-height: 1.4;
+  break-inside: avoid;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+caption {
+  caption-side: top;
+  text-align: left;
+  font-size: 8pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 2mm;
+}
+
+table.data th {
+  background: var(--tint);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 8.5pt;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 2.4mm 3mm;
+  vertical-align: bottom;
+  border-bottom: 1pt solid var(--accent);
+  border-top: 0.75pt solid var(--rule-strong);
+}
+
+table.data td {
+  padding: 2.4mm 3mm;
+  border-bottom: 0.5pt solid var(--rule);
+  vertical-align: top;
+}
+
+table.data tbody tr:last-child td { border-bottom: 0.75pt solid var(--rule-strong); }
+
+.num { text-align: right; white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+
+tr.total td {
+  font-weight: 700;
+  background: var(--tint);
+  border-bottom: 0.75pt solid var(--accent);
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.88em;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- врезка */
+
+.callout {
+  border-left: 2.5pt solid var(--accent);
+  padding: 0 0 0 6mm;
+  margin: calc(var(--unit) * 1.7) 0;
+  max-width: var(--measure);
+  break-inside: avoid;
+}
+.callout .eyebrow { margin-top: 0; }
+.callout p { margin-bottom: 0; font-size: 10.5pt; }
+
+/* ---------------------------------------------------------------- вердикт */
+
+.verdict { margin: var(--unit) 0 0; max-width: var(--measure); }
+.verdict dt {
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: calc(var(--unit) * 1.5);
+}
+.verdict dd { margin: 1mm 0 0; font-size: 10.5pt; }
+
+.footnote {
+  font-size: 8.5pt;
+  line-height: 1.45;
+  color: var(--muted);
+  border-top: 0.5pt solid var(--rule);
+  padding-top: 3mm;
+  margin-top: calc(var(--unit) * 2.5);
+  max-width: var(--measure);
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ 1. титул -->
+<section class="page cover">
+  <div class="cover-band">
+    <div class="cover-kicker">Домашнее задание №2 &middot; Вариант B4</div>
+    <h1>Регресс кредитного калькулятора</h1>
+    <p class="cover-sub">Спецификация, объект тестирования, регрессионный набор
+      и повторяемая процедура прогона. Отчёт о результатах.</p>
+  </div>
+
+  <div class="cover-figures">
+    <div class="figure">
+      <div class="figure-value">266</div>
+      <div class="figure-label">Тестов</div>
+    </div>
+    <div class="figure">
+      <div class="figure-value">265</div>
+      <div class="figure-label">Прошло</div>
+    </div>
+    <div class="figure">
+      <div class="figure-value">42 %</div>
+      <div class="figure-label">Отказ расчёта</div>
+    </div>
+    <div class="figure">
+      <div class="figure-value">6</div>
+      <div class="figure-label">Дефектов открыто</div>
+    </div>
+  </div>
+
+  <div class="cover-note">
+    <p>Первые два показателя описывают регресс, третий — тот же калькулятор
+    на тех же тестах. Расхождение между ними и есть предмет этого отчёта:
+    дефект, роняющий расчёт почти на половине реалистичных конфигураций
+    кредита, находится вне покрытия полностью зелёного набора тестов.</p>
+    <p>Отчёт разбирает, как это вышло, во что подобные ошибки обходятся
+    в деньгах на пятнадцатилетнем сроке и что осталось нерешённым.</p>
+  </div>
+
+  <div class="cover-meta">
+    <table>
+      <tr><td>Автор</td><td>Timur</td></tr>
+      <tr><td>Дата</td><td>28 августа 2026</td></tr>
+      <tr><td>Область</td><td>Аннуитет, ставка, срок, досрочное погашение, страховка</td></tr>
+      <tr><td>Репозиторий</td><td>github.com/tchina8/QA-homework</td></tr>
+      <tr><td>Прогон</td><td>2026-08-28_153337</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 2. оглавление -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">&nbsp;</div>
+    <h2>Содержание</h2>
+  </div>
+
+  <ol class="toc">
+    <li><span>Резюме
+      <span class="toc-sub">Что построено и главный вывод</span></span>
+      <span class="toc-note" data-toc="Резюме">—</span></li>
+    <li><span>Результаты прогона
+      <span class="toc-sub">Итоги и разбивка по файлам регресса</span></span>
+      <span class="toc-note" data-toc="Результаты прогона">—</span></li>
+    <li><span>Находки
+      <span class="toc-sub">Открытые дефекты, потеря тестов, устранённые ошибки спецификации</span></span>
+      <span class="toc-note" data-toc="Находки">—</span></li>
+    <li><span>Слепая зона регресса
+      <span class="toc-sub">Почему зелёный прогон не заметил дефекта</span></span>
+      <span class="toc-note" data-toc="Слепая зона регресса">—</span></li>
+    <li><span>Что не сработало и что осталось
+      <span class="toc-sub">Отрицательные результаты и открытые вопросы</span></span>
+      <span class="toc-note" data-toc="Что не сработало">—</span></li>
+  </ol>
+</section>
+
+<!-- ============================================================ 3. резюме -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">1</div>
+    <h2>Резюме</h2>
+  </div>
+
+  <p class="lede">Построен регресс кредитного калькулятора по варианту B4:
+  спецификация как источник истины, калькулятор как объект тестирования,
+  266 автоматических проверок и повторяемая процедура прогона с независимым
+  контролем результата.</p>
+
+  <p>Работа велась в порядке, при котором каждый артефакт проверяет предыдущий.
+  Сначала написана спецификация, все эталонные числа в ней получены расчётом,
+  а не по памяти. Затем по спецификации написан калькулятор. Затем три
+  параллельных агента написали тесты, имея доступ только к спецификации: чтение
+  исходников калькулятора было запрещено, чтобы тест не проверял, что код равен
+  сам себе. Соблюдение запрета проверено инструментально — разбором
+  синтаксического дерева тестов и сверкой каждого числового литерала с текстом
+  спецификации.</p>
+
+  <table class="data">
+    <caption>Состав работы</caption>
+    <thead><tr><th>Артефакт</th><th>Содержание</th><th class="num">Объём</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap"><code>docs/spec.md</code></td><td>Формулы, 10 инвариантов, 3 эталонных примера</td><td class="num">526 строк</td></tr>
+      <tr><td class="nowrap"><code>calc/</code></td><td>Калькулятор: деньги, аннуитет, досрочка, страховка</td><td class="num">5 модулей</td></tr>
+      <tr><td class="nowrap"><code>tests/</code></td><td>Регресс, написан тремя параллельными агентами</td><td class="num">266 тестов</td></tr>
+      <tr><td class="nowrap"><code>workflow/</code></td><td>Процедура прогона в 6 шагов с отдельным проверяющим</td><td class="num">3 файла</td></tr>
+      <tr><td class="nowrap"><code>findings.md</code></td><td>Журнал дефектов: 4 устранено, 6 открыто</td><td class="num">10 записей</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="eyebrow">Главный вывод</div>
+    <p>Зелёный прогон не является доказательством качества. Все 265 тестов
+    проходят, и одновременно в калькуляторе живёт дефект, роняющий расчёт
+    исключением примерно на 42 % реалистичных конфигураций кредита. Нашёлся он
+    не тестами, а ручным расчётом денежных последствий на длинном сроке. Причина
+    не в небрежности исполнителей, а в однородности эталонов: все три эталонных
+    примера спецификации построены на одном и том же 12-месячном кредите,
+    и регресс унаследовал это свойство вместе с числами.</p>
+  </div>
+
+  <p>Второй по значимости результат — того же рода. Процедура прогона на первом
+  же запуске выдала отчёт с заниженным числом тестов, и обнаружил это не автор
+  процедуры, а поставленный отдельно проверяющий агент, обязанный пересчитать
+  итоги самостоятельно.</p>
+</section>
+
+<!-- ============================================================ 4. прогон -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">2</div>
+    <h2>Результаты прогона</h2>
+  </div>
+
+  <p>Прогон выполнен процедурой <code>workflow/run_regression.py</code>, сырой
+  вывод сохранён целиком. Разбор сверен с двумя независимыми контрольными
+  суммами самого pytest: строкой <code>collected 266 items</code> и итоговой
+  строкой прогона.</p>
+
+  <table class="data">
+    <caption>Таблица 1. Итоги прогона 2026-08-28_153337</caption>
+    <thead><tr><th>Показатель</th><th class="num">Значение</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>Всего тестов</td><td class="num">266</td><td>Совпадает с <code>collected</code></td></tr>
+      <tr><td>Прошло</td><td class="num">265</td><td>&mdash;</td></tr>
+      <tr><td>Упало</td><td class="num">0</td><td>&mdash;</td></tr>
+      <tr><td>Ожидаемо упало, xfail</td><td class="num">1</td><td>Закрепляет BUG&#8209;01, строгий режим</td></tr>
+      <tr><td>Неожиданно прошло, XPASS</td><td class="num">0</td><td>Дефект не чинили молча</td></tr>
+      <tr><td>Пропущено</td><td class="num">0</td><td>&mdash;</td></tr>
+      <tr><td>Код возврата</td><td class="num">0</td><td>Длительность 0,43 с</td></tr>
+    </tbody>
+  </table>
+
+  <table class="data">
+    <caption>Таблица 2. Разбивка по файлам регресса</caption>
+    <thead><tr>
+      <th>Файл</th><th>Зона ответственности</th>
+      <th class="num">Всего</th><th class="num">Прошло</th><th class="num">xfail</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="nowrap"><code>test_annuity.py</code></td><td>Ставка, срок, график, инварианты</td><td class="num">102</td><td class="num">102</td><td class="num">0</td></tr>
+      <tr><td class="nowrap"><code>test_prepayment.py</code></td><td>Досрочка обоих видов</td><td class="num">79</td><td class="num">78</td><td class="num">1</td></tr>
+      <tr><td class="nowrap"><code>test_insurance.py</code></td><td>Страховка обеих схем</td><td class="num">67</td><td class="num">67</td><td class="num">0</td></tr>
+      <tr><td class="nowrap"><code>test_rounding_discipline.py</code></td><td>Дисциплина округления, запрет float</td><td class="num">18</td><td class="num">18</td><td class="num">0</td></tr>
+      <tr class="total"><td>Итого</td><td>&mdash;</td><td class="num">266</td><td class="num">265</td><td class="num">1</td></tr>
+    </tbody>
+  </table>
+
+  <p>Первые три файла написаны тремя субагентами параллельно, по одному на зону.
+  Расход контекста составил 98 и 130 тысяч токенов на агента при объёме
+  25&ndash;30 тестов; по третьему данных нет — он завершился аварийно на этапе
+  отчёта, успев записать файл. Четвёртый файл — статическая проверка исходников
+  калькулятора: округление разрешено только в одном модуле, литералы
+  <code>float</code> запрещены полностью.</p>
+</section>
+
+<!-- ============================================================ 5. находки -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">3</div>
+    <h2>Находки</h2>
+  </div>
+
+  <table class="data">
+    <caption>Таблица 3. Сводка открытых дефектов</caption>
+    <thead><tr><th class="nowrap">Код</th><th>Дефект</th><th>Категория</th><th class="nowrap">Тест</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">BUG&#8209;01</td><td>Падение расчёта при копеечной досрочке на длинном кредите</td><td class="nowrap">Дефект кода</td><td class="nowrap">есть, xfail</td></tr>
+      <tr><td class="nowrap">BUG&#8209;02</td><td>Инвариант И&#8209;10 противоречит разделу 4.2 спецификации</td><td class="nowrap">Пробел спецификации</td><td class="nowrap">нет</td></tr>
+      <tr><td class="nowrap">BUG&#8209;07</td><td>Предусловие на тариф страхования не задано</td><td class="nowrap">Пробел спецификации</td><td class="nowrap">нет</td></tr>
+      <tr><td class="nowrap">BUG&#8209;08</td><td>Не определено поведение досрочки на отсечённый месяц</td><td class="nowrap">Пробел спецификации</td><td class="nowrap">нет</td></tr>
+      <tr><td class="nowrap">BUG&#8209;09</td><td>Не оговорён масштаб агрегатных сумм</td><td class="nowrap">Пробел спецификации</td><td class="nowrap">нет</td></tr>
+      <tr><td class="nowrap">BUG&#8209;10</td><td>Поведение при неамортизируемом платеже со страховкой</td><td class="nowrap">Пробел спецификации</td><td class="nowrap">нет</td></tr>
+    </tbody>
+  </table>
+
+  <h3>BUG&#8209;01. Падение расчёта при копеечной досрочке</h3>
+
+  <p>На кредите 3 000 000,00 под 12 % на 180 месяцев досрочное погашение в одну
+  копейку на третьем месяце завершается исключением вместо графика. Досрочки
+  1,00 и 100,00 на том же кредите считаются нормально: чем меньше сумма, тем
+  выше вероятность отказа.</p>
+
+  <p>Причина в том, что при сокращении срока правило балансирующего платежа
+  не применяет условие «исчерпан срок». Если последний платёж кредита больше
+  регулярного, графику требуется дополнительная строка, а ограничитель её
+  запрещает. Прямой денежной ошибки нет — есть отказ в обслуживании: на 42 %
+  проверенных конфигураций калькулятор не выдаёт результата вовсе.</p>
+
+  <h3>BUG&#8209;02. Противоречие внутри спецификации</h3>
+
+  <p>Инвариант И&#8209;10 требует, чтобы число строк графика не превышало срок
+  кредита. Раздел 4.2 той же спецификации объявляет срок при сокращении
+  свободным и прямо называет последнюю строку размером в одну копейку законным
+  результатом. Для кредита, у которого последний платёж больше регулярного, эти
+  два требования несовместимы. До решения о том, какое из них уступает,
+  BUG&#8209;01 чинить нельзя: правильное поведение не определено.</p>
+</section>
+
+<!-- ============================================================ 6. находки, продолжение -->
+<section class="page">
+  <h3>Потеря 14 тестов при разборе результата</h3>
+
+  <p>Дефект не в калькуляторе, а в самой процедуре прогона, и по последствиям он
+  опаснее обоих предыдущих. На первом запуске процедура собрала отчёт, в котором
+  значилось 252 теста вместо 266. Регулярное выражение обрывало идентификатор
+  теста на первом пробеле, а параметризации с русскими подписями пробелы
+  содержат.</p>
+
+  <table class="data">
+    <caption>Таблица 4. Разбор до и после починки</caption>
+    <thead><tr>
+      <th>Прогон</th><th class="num">Собрано pytest</th><th class="num">Разобрано</th>
+      <th class="num">Потеряно</th><th>Сверка с pytest</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="nowrap">Первый, 15:03</td><td class="num">266</td><td class="num">252</td><td class="num">14</td><td>отсутствовала</td></tr>
+      <tr><td class="nowrap">Второй, 15:33</td><td class="num">266</td><td class="num">266</td><td class="num">0</td><td>две контрольные суммы</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p>Потерянными оказались ровно 14 проверок отказа на некорректный вход —
+    отрицательные суммы, нулевой срок, передача вещественных чисел вместо
+    денежных. Если бы они начали падать, отчёт бы этого не показал. Дефект нашёл
+    проверяющий агент, которому предписано пересчитывать итоги самостоятельно
+    и не доверять разбору. Автор процедуры его не заметил.</p>
+  </div>
+
+</section>
+
+<!-- ======================================= 7. находки: устранённые дефекты -->
+<section class="page">
+  <h3>Устранённые дефекты спецификации</h3>
+
+  <p>Четыре дефекта найдены до прогона — при проверке спецификации расчётом
+  и при написании тестов — и устранены отдельными коммитами. Приводятся, потому
+  что показывают, что именно ловил процесс и во что обошлась бы каждая ошибка.</p>
+
+  <table class="data">
+    <caption>Таблица 5. Дефекты спецификации и их цена на 15-летнем кредите</caption>
+    <thead><tr><th class="nowrap">Код</th><th>Ошибка спецификации</th><th class="num">Цена, руб.</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">BUG&#8209;03</td><td>Инвариант требовал балансирующего платежа там, где долг закрывает досрочка</td><td class="num">2 981 804,13</td></tr>
+      <tr><td class="nowrap">BUG&#8209;04</td><td>Экономия при досрочке 1,00 записана как ноль, не посчитана</td><td class="num">4,83</td></tr>
+      <tr><td class="nowrap">BUG&#8209;05</td><td>Проценты объявлены строго убывающими; после округления совпадают</td><td class="num">ложные падения</td></tr>
+      <tr><td class="nowrap">BUG&#8209;06</td><td>Любая досрочка объявлена сокращающей срок; копеечная не сокращает</td><td class="num">ложные падения</td></tr>
+    </tbody>
+  </table>
+
+  <p>BUG&#8209;03 — самый дорогой. Если бы калькулятор следовал букве инварианта,
+  при досрочном погашении в размере остатка с клиента списали бы 3 017 809,17
+  вместо 36 005,04: весь остаток долга вторым платежом.</p>
+
+  <p>Отдельно проверена цена решений, принятых в спецификации сознательно.
+  Порядок списания досрочки — она уменьшает долг после начисления процентов,
+  а не до — стоит 5 000,00 за один месяц при досрочке 500 000,00. Выбор режима
+  округления и запрет вещественных чисел на пятнадцати годах дают расхождение
+  в 4 и 1 копейку соответственно, то есть заметно меньше, чем можно было
+  ожидать.</p>
+</section>
+
+<!-- ============================================================ 7. слепая зона -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">4</div>
+    <h2>Слепая зона регресса</h2>
+  </div>
+
+  <p class="lede">265 тестов проходят. Дефект, роняющий расчёт на 42 %
+  конфигураций, находится вне их покрытия. Это главный результат работы,
+  и он важнее самих дефектов.</p>
+
+  <p>Причина прослеживается по шагам и не сводится к небрежности.</p>
+
+  <table class="data">
+    <caption>Таблица 6. Как возникла слепая зона</caption>
+    <thead><tr><th class="num">Шаг</th><th>Что произошло</th><th>Следствие</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Все три эталонных примера спецификации построены на одном кредите: 1 000 000,00 под 12 % на 12 месяцев</td><td>Эталон один, показан трижды</td></tr>
+      <tr><td class="num">2</td><td>У этого кредита последний платёж на 3 копейки меньше регулярного</td><td>Запас последнего платежа положителен</td></tr>
+      <tr><td class="num">3</td><td>Тесты писались строго по спецификации, как и требовалось</td><td>Вместе с числами унаследовано и это свойство</td></tr>
+      <tr><td class="num">4</td><td>На длинных сроках знак запаса меняется: у 15-летнего кредита последний платёж больше регулярного</td><td>Целая ветка кода не исполняется ни одним тестом</td></tr>
+    </tbody>
+  </table>
+
+  <p>Замер распространённости выполнен по 350 комбинациям: сумма от 100 000
+  до 5 000 000, ставка от 5 % до 25 %, срок от 6 до 360 месяцев.</p>
+
+  <table class="data">
+    <caption>Таблица 7. Распространённость непокрытой ветки</caption>
+    <thead><tr><th>Свойство конфигурации</th><th class="num">Комбинаций</th><th class="num">Доля</th></tr></thead>
+    <tbody>
+      <tr><td>Проверено всего</td><td class="num">350</td><td class="num">100 %</td></tr>
+      <tr><td>Отрицательный запас последнего платежа</td><td class="num">163</td><td class="num">46 %</td></tr>
+      <tr class="total"><td>Падение при копеечной досрочке</td><td class="num">147</td><td class="num">42 %</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="eyebrow">Вывод для процесса</div>
+    <p>Правило «источник ожиданий — только спецификация» защищает от тестов,
+    списанных с реализации, но не защищает от слепых зон самой спецификации.
+    Если эталонные примеры однородны, регресс наследует их однородность целиком
+    и остаётся зелёным ровно там, где смотреть было некуда.</p>
+  </div>
+
+  <p>Практическое следствие: проверять надо не только числа эталона, но и его
+  граничные свойства — знак запаса последнего платежа, делимость суммы на срок,
+  порядок величин. Эталон, у которого все характеристики одинаковы, даёт ложное
+  ощущение покрытия, пропорциональное количеству построенных на нём тестов.</p>
+</section>
+
+<!-- ============================================================ 8. итоги -->
+<section class="page">
+  <div class="section-head">
+    <div class="section-number">5</div>
+    <h2>Что не сработало и что осталось</h2>
+  </div>
+
+  <h3>Что не сработало</h3>
+
+  <table class="data">
+    <caption>Таблица 8. Отрицательные результаты</caption>
+    <thead><tr><th>Что</th><th>Как проявилось</th></tr></thead>
+    <tbody>
+      <tr><td>Замер параллельности агентов</td><td>Ограничение сессии выбралось в середине работы. Один агент завершился аварийно на этапе отчёта, второй отчитался спустя почти три часа. Полных данных о времени нет, сравнение «последовательно против параллельно» не состоялось</td></tr>
+      <tr><td>Отчёт одного из трёх агентов</td><td>Утрачен вместе с его замечаниями по спецификации. Файл с тестами уцелел, наблюдения — нет</td></tr>
+      <tr><td>Первый запуск процедуры прогона</td><td>Собрал отчёт с заниженным числом тестов и не подал никакого сигнала</td></tr>
+      <tr><td>Признак покрытия дефекта тестом</td><td>Завышает покрытие: это текстовый поиск кода дефекта по файлам тестов. Реально из шести открытых дефектов собственный тест имеет один, а процедура сообщает о двух</td></tr>
+      <tr><td>Спецификация как источник истины</td><td>Дважды содержала ошибки, которые пришлось искать расчётом: невычисленное число в таблице и два инварианта, сформулированных строже, чем выполняются</td></tr>
+    </tbody>
+  </table>
+
+</section>
+
+<!-- ============================================================ 9. что осталось -->
+<section class="page">
+  <h3>Что осталось</h3>
+
+  <table class="data">
+    <caption>Таблица 9. Открытые вопросы</caption>
+    <thead><tr><th>Вопрос</th><th class="nowrap">Кто решает</th><th>Что блокирует</th></tr></thead>
+    <tbody>
+      <tr><td>Какое требование уступает в противоречии И&#8209;10 и раздела 4.2</td><td class="nowrap">Заказчик</td><td>Починку BUG&#8209;01: правильное поведение не определено</td></tr>
+      <tr><td>Предусловие на тариф страхования, верхняя граница</td><td class="nowrap">Заказчик</td><td>Тест на BUG&#8209;07</td></tr>
+      <tr><td>Поведение досрочки на месяц за пределами сокращённого срока</td><td class="nowrap">Заказчик</td><td>Тест на BUG&#8209;08</td></tr>
+      <tr><td>Четвёртый эталонный пример на длинном сроке с отрицательным запасом</td><td class="nowrap">Автор спецификации</td><td>Закрытие слепой зоны</td></tr>
+      <tr><td>Ужесточение признака покрытия до привязки к тест-функции</td><td class="nowrap">Автор процедуры</td><td>Достоверность отчёта о покрытии</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Вердикт независимого контроля</h3>
+
+  <p>Результат прогона проверял агент, который его не выполнял, обязанный
+  пересчитать итоги из сырого вывода и не доверять разбору.</p>
+
+  <dl class="verdict">
+    <dt>Сделано</dt>
+    <dd>Прогон воспроизведён независимо и сошёлся: 266 собранных тестов,
+    265 прошло, один ожидаемо упал. Разбор совпал с обеими контрольными суммами
+    pytest. XPASS не появился, число тестов не уменьшилось, починка разбора
+    подтверждена сверкой множеств.</dd>
+
+    <dt>Не получилось</dt>
+    <dd>Признак наличия живого теста у дефекта завышает покрытие. Зелёный прогон
+    ничего не доказывает про главную слепую зону: дефект на 42 % конфигураций
+    найден ручным расчётом, а не тестами.</dd>
+
+    <dt>Осталось</dt>
+    <dd>Решение по противоречию в спецификации, без которого нельзя чинить дефект
+    кода; тесты на четыре открытых пробела либо сознательное принятие риска;
+    ужесточение признака покрытия.</dd>
+  </dl>
+
+  <p class="footnote">Отчёт собран из артефактов прогона 2026-08-28_153337:
+  сырой вывод pytest, пять машинных артефактов шагов процедуры, вердикт
+  проверяющего агента и журнал <code>findings.md</code>. Все денежные величины
+  получены расчётом на кредите 3 000 000,00 под 12 % на 180 месяцев.</p>
+</section>
+
+</body>
+</html>
