@@ -1,0 +1,105 @@
+{
+  "step": 4,
+  "name": "проверка findings.md",
+  "stamp": "2026-08-28_153337",
+  "bugs": [
+    {
+      "id": "BUG-01",
+      "title": "падение расчёта при копеечной досрочке на длинном кредите",
+      "status": "открыт",
+      "tests_referencing": [
+        "test_prepayment.py"
+      ],
+      "mentions": [
+        "test_prepayment.py: # --------------------------------------------------------------------------- BUG-01",
+        "test_prepayment.py: \"BUG-01: при сокращении срока условие (б) правила 3.4 не применяется, \"",
+        "test_prepayment.py: \"которую запрещает И-10. См. findings.md, BUG-01 и BUG-02\"",
+        "test_prepayment.py: прогон оставался зелёным, а починка BUG-01 немедленно проявилась как"
+      ],
+      "has_live_test": true
+    },
+    {
+      "id": "BUG-02",
+      "title": "И-10 противоречит разделу 4.2",
+      "status": "открыт",
+      "tests_referencing": [
+        "test_prepayment.py"
+      ],
+      "mentions": [
+        "test_prepayment.py: \"которую запрещает И-10. См. findings.md, BUG-01 и BUG-02\""
+      ],
+      "has_live_test": true
+    },
+    {
+      "id": "BUG-03",
+      "title": "И-3 ложен для графика, закрытого досрочкой",
+      "status": "устранён",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-04",
+      "title": "невычисленное число в таблице порогов 4.2",
+      "status": "устранён",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-05",
+      "title": "И-4 сформулирован как строгое убывание процентов",
+      "status": "устранён",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-06",
+      "title": "И-10 требовал строгого сокращения срока",
+      "status": "устранён",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-07",
+      "title": "Предусловие на тариф страхования `ρ` не задано нигде — ни раздел 2, ни 3.5, ни 5",
+      "status": "открыт",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-08",
+      "title": "Не определено поведение досрочки на месяц, до которого график не дожил из-за сокращения срока",
+      "status": "открыт",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-09",
+      "title": "Масштаб агрегатов не оговорён",
+      "status": "открыт",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    },
+    {
+      "id": "BUG-10",
+      "title": "`PaymentDoesNotAmortise` не привязан к страховке",
+      "status": "открыт",
+      "tests_referencing": [],
+      "mentions": [],
+      "has_live_test": false
+    }
+  ],
+  "open_count": 6,
+  "open_without_test": [
+    "BUG-07",
+    "BUG-08",
+    "BUG-09",
+    "BUG-10"
+  ]
+}

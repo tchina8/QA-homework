@@ -1,0 +1,12 @@
+{
+  "step": 1,
+  "name": "прогон",
+  "stamp": "2026-08-28_150325",
+  "command": "pytest.exe -v --tb=long",
+  "exit_code": 0,
+  "started": "2026-08-28T15:03:25",
+  "finished": "2026-08-28T15:03:26",
+  "duration_seconds": 0.8,
+  "raw_output": "reports/raw/2026-08-28_150325.txt",
+  "raw_bytes": 28972
+}
