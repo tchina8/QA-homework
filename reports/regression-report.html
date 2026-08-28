@@ -108,28 +108,41 @@ p {
   margin: 0;
 }
 
+/* Строка ключевых цифр. Поля 24 мм совпадают с полями полосы заголовка выше
+   и абзаца ниже — блок стоит на той же сетке.
+   `minmax(0, 1fr)`, а не `1fr`: последнее эквивалентно `minmax(auto, 1fr)`,
+   и колонка с длинной подписью растягивается за свою долю, из-за чего
+   разделители расходятся с четвертями блока. */
 .cover-figures {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-bottom: 0.75pt solid var(--rule);
   margin: 0 24mm;
 }
 
-.figure { padding: 9mm 0 8mm; border-right: 0.75pt solid var(--rule); }
+.figure {
+  padding: 9mm 4mm 8mm;
+  text-align: center;
+  border-right: 0.75pt solid var(--rule);
+}
 .figure:last-child { border-right: 0; }
+
 .figure-value {
   font-size: 24pt;
   line-height: 1;
   color: var(--accent);
   font-variant-numeric: lining-nums tabular-nums;
 }
+
 .figure-label {
   font-size: 8pt;
   letter-spacing: 0.1em;
+  /* Трекинг добавляет пробел после последней буквы, и центрированная строка
+     из-за него смещается влево на эту же величину. Отступ компенсирует. */
+  text-indent: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
   margin-top: 3mm;
-  padding-right: 4mm;
   line-height: 1.35;
 }
 
