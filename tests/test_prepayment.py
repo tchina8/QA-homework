@@ -41,7 +41,7 @@ from conftest import (
     to_decimal,
 )
 
-from calc.annuity import total_interest, total_paid
+from calc.annuity import ScheduleDidNotTerminate, total_interest, total_paid
 from calc.prepayment import (
     interest_saved,
     schedule_with_payment_reduction,
@@ -999,4 +999,51 @@ def test_invalid_loan_parameters_are_rejected(
     pytest.fail(
         f"{kind}: параметры приняты без ошибки (построено строк: {len(schedule)}), "
         f"хотя {reason}"
+    )
+
+
+# --------------------------------------------------------------------------- BUG-01
+
+#: Длинный кредит с **отрицательным** запасом последнего платежа.
+#: Регулярный платёж `36 005.04`, последний `36 005.88` — последний больше
+#: регулярного, в отличие от 12-месячного эталона спеки, где он меньше.
+LONG_LOAN = (Decimal("3000000.00"), Decimal("0.12"), 180)
+
+
+@pytest.mark.xfail(
+    raises=ScheduleDidNotTerminate,
+    strict=True,
+    reason=(
+        "BUG-01: при сокращении срока условие (б) правила 3.4 не применяется, "
+        "и кредиту с отрицательным запасом последнего платежа требуется строка n+1, "
+        "которую запрещает И-10. См. findings.md, BUG-01 и BUG-02"
+    ),
+)
+def test_penny_prepayment_on_long_loan_closes_the_schedule() -> None:
+    """Копеечная досрочка на длинном кредите обязана дать закрытый график.
+
+    Раздел 4.2 спеки прямо разрешает при сокращении срока последнюю строку сколь
+    угодно малого размера, вплоть до `0.01`, и называет это законным результатом.
+    Инвариант И-2 («остаток после последнего платежа строго ноль») объявлен
+    безусловным и исключений не имеет.
+
+    Фактически расчёт падает с `ScheduleDidNotTerminate`: график требует строки
+    `n + 1`, а И-10 разрешает не более `n`. Дефект избирателен — досрочки `1.00`
+    и `100.00` на том же кредите считаются нормально, падает именно `0.01`.
+
+    Ожидания в этом тесте намеренно **не** ослаблены под фактическое поведение:
+    он описывает то, что требует спека, и помечен `xfail(strict=True)`, чтобы
+    прогон оставался зелёным, а починка BUG-01 немедленно проявилась как
+    неожиданный проход.
+    """
+    principal, annual_rate, months = LONG_LOAN
+    schedule = schedule_with_term_reduction(
+        principal, annual_rate, months, {PREPAYMENT_MONTH: Decimal("0.01")}
+    )
+
+    assert_money_equal(schedule[-1].balance, ZERO, "остаток после последнего платежа")
+    assert_money_equal(
+        sum_money(row.principal + row.prepayment for row in schedule),
+        principal,
+        "сумма тел с досрочками",
     )
